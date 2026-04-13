@@ -342,6 +342,17 @@ final class APIClient: Sendable {
         let _: [String: String] = try await request(.PATCH, "/users/\(userId)/participate", body: ["participate": participate ? "true" : "false"])
     }
 
+    func updateFamily(_ familyId: String, name: String?, houseType: String?) async throws {
+        var body: [String: String] = [:]
+        if let name { body["family_name"] = name }
+        if let houseType { body["house_type"] = houseType }
+        let _: [String: String] = try await request(.PATCH, "/families/\(familyId)", body: body)
+    }
+
+    func deleteFamily(_ familyId: String) async throws -> [String: String] {
+        try await request(.DELETE, "/families/\(familyId)")
+    }
+
     func removeFamilyMember(_ familyId: String, memberId: String) async throws -> [String: String] {
         try await request(.DELETE, "/families/\(familyId)/members/\(memberId)")
     }

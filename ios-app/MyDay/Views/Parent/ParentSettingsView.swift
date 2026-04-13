@@ -13,6 +13,8 @@ struct ParentSettingsView: View {
     @State private var showGamingConfig = false
     @State private var showRoomScan = false
     @State private var showLogoutConfirm = false
+    @State private var showDeleteFamilyConfirm = false
+    @State private var showEditFamily = false
     @State private var participates = false
 
     var body: some View {
@@ -83,6 +85,30 @@ struct ParentSettingsView: View {
                             }
                     }.gameCard()
 
+                    // Home / Family Info
+                    VStack(spacing: 2) {
+                        SettingsRow(icon: "house.fill", title: "Manage Home", subtitle: familyStore.family?.familyName ?? "Edit family name & house type", color: .neonBlue) {
+                            showEditFamily = true
+                        }
+                    }
+
+                    // Danger Zone
+                    VStack(spacing: 10) {
+                        Text("DANGER ZONE").font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.neonRed.opacity(0.4))
+                            .tracking(1).frame(maxWidth: .infinity, alignment: .leading)
+
+                        Button("Delete Family & All Data") { showDeleteFamilyConfirm = true }
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(.neonRed)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(Color.neonRed.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.neonRed.opacity(0.2), lineWidth: 1))
+
+                        Text("This permanently deletes the family, all members, chores, rewards, contracts, and data. Cannot be undone.")
+                            .font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.2))
+                    }
+
                     // Logout
                     Button("Log Out") { showLogoutConfirm = true }.buttonStyle(NeonButtonStyle(color: .neonRed))
 
@@ -100,6 +126,19 @@ struct ParentSettingsView: View {
         } message: {
             Text("Are you sure you want to log out?")
         }
+        .alert("Delete Family", isPresented: $showDeleteFamilyConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Everything", role: .destructive) {
+                Task {
+                    guard let fid = auth.familyId else { return }
+                    try? await APIClient.shared.deleteFamily(fid)
+                    auth.fullLogout()
+                }
+            }
+        } message: {
+            Text("This will permanently delete your family, ALL member accounts, chores, rewards, contracts, and all data. This cannot be undone.\n\nEveryone will be logged out.")
+        }
+        .sheet(isPresented: $showEditFamily) { EditFamilyView() }
         .task {
             if let uid = auth.userId {
                 let result = try? await APIClient.shared.getParticipation(uid)
@@ -115,6 +154,95 @@ struct ParentSettingsView: View {
         .sheet(isPresented: $showPetConfig) { PetConfigView() }
         .sheet(isPresented: $showGamingConfig) { GamingConfigView() }
         .sheet(isPresented: $showRoomScan) { RoomScanView() }
+    }
+}
+
+// MARK: - Edit Family (name + house type)
+struct EditFamilyView: View {
+    @Environment(AuthManager.self) private var auth
+    @Environment(FamilyStore.self) private var familyStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var familyName = ""
+    @State private var houseType = "house"
+    @State private var isSaving = false
+    @State private var saved = false
+
+    let houseTypes = [
+        ("house", "House", "house.fill"),
+        ("apartment", "Apartment", "building.2.fill"),
+        ("condo", "Condo", "building.fill"),
+        ("townhouse", "Townhouse", "house.lodge.fill")
+    ]
+
+    var body: some View {
+        ZStack {
+            Color.gameBackground.ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 16) {
+                    HStack {
+                        Text("Manage Home").font(.system(size: 20, weight: .black, design: .rounded)).foregroundStyle(.white)
+                        Spacer()
+                        Button { dismiss() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 24)).foregroundStyle(.white.opacity(0.3)) }
+                    }.padding(.top, 16)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Family Name").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.4))
+                        GameTextField(icon: "person.3.fill", placeholder: "Family name", text: $familyName)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Home Type").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.4))
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                            ForEach(houseTypes, id: \.0) { type in
+                                Button {
+                                    houseType = type.0
+                                } label: {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: type.2).font(.system(size: 24))
+                                            .foregroundStyle(houseType == type.0 ? .neonBlue : .white.opacity(0.3))
+                                        Text(type.1).font(.system(size: 12, weight: .bold, design: .rounded))
+                                            .foregroundStyle(houseType == type.0 ? .white : .white.opacity(0.4))
+                                    }
+                                    .frame(maxWidth: .infinity).padding(.vertical, 16)
+                                    .background(houseType == type.0 ? Color.neonBlue.opacity(0.15) : Color.gameCardLight)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(houseType == type.0 ? Color.neonBlue.opacity(0.4) : .clear, lineWidth: 1))
+                                }.buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    if saved {
+                        HStack { Image(systemName: "checkmark.circle.fill"); Text("Saved!") }
+                            .font(.system(size: 14, weight: .bold)).foregroundStyle(.neonGreen)
+                    }
+
+                    Button(isSaving ? "Saving..." : "Save Changes") {
+                        isSaving = true
+                        Task {
+                            try? await APIClient.shared.updateFamily(
+                                auth.familyId ?? "",
+                                name: familyName.isEmpty ? nil : familyName,
+                                houseType: houseType
+                            )
+                            if let fid = auth.familyId { await familyStore.load(familyId: fid) }
+                            saved = true; isSaving = false
+                            try? await Task.sleep(for: .seconds(1.5)); dismiss()
+                        }
+                    }
+                    .buttonStyle(NeonButtonStyle(color: .neonBlue))
+                    .disabled(isSaving)
+
+                    Button("Cancel") { dismiss() }
+                        .font(.system(size: 14, weight: .medium)).foregroundStyle(.white.opacity(0.3))
+                }.padding(16)
+            }
+        }
+        .onAppear {
+            familyName = familyStore.family?.familyName ?? ""
+            // Get house type from house_details if available
+            houseType = "house" // default
+        }
     }
 }
 

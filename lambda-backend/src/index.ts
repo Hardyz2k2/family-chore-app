@@ -1945,6 +1945,67 @@ export const handler = async (event: any): Promise<APIGatewayProxyResult> => {
       return response(200, { message: `${memberName} has been removed from the family` });
     }
 
+    // Delete entire family (nuclear option — removes all data)
+    if (path.match(/^\/v1\/families\/[^/]+$/) && httpMethod === 'DELETE') {
+      const user = getUserFromToken(event);
+      if (!user) return response(401, { error: 'Unauthorized' });
+      const familyId = path.split('/')[3];
+
+      // Verify requester is a parent in this family
+      const parentCheck = await pool.query(
+        "SELECT 1 FROM users WHERE user_id = $1 AND family_id = $2 AND role = 'parent'",
+        [user.userId, familyId]
+      );
+      if (parentCheck.rows.length === 0) return response(403, { error: 'Only parents can delete the family' });
+
+      // Get all member IDs
+      const members = await pool.query('SELECT user_id FROM family_members WHERE family_id = $1', [familyId]);
+      const memberIds = members.rows.map((m: any) => m.user_id);
+
+      if (memberIds.length > 0) {
+        // Delete all chore-related data
+        await pool.query('DELETE FROM assigned_chores WHERE user_id = ANY($1)', [memberIds]);
+        await pool.query('DELETE FROM job_applications WHERE user_id = ANY($1)', [memberIds]);
+        await pool.query('DELETE FROM user_rewards WHERE user_id = ANY($1)', [memberIds]);
+        await pool.query('DELETE FROM points_history WHERE user_id = ANY($1)', [memberIds]);
+        await pool.query('DELETE FROM screen_time_settings WHERE user_id = ANY($1)', [memberIds]);
+      }
+
+      // Delete family-level data
+      await pool.query('DELETE FROM jobs WHERE family_id = $1', [familyId]);
+      await pool.query('DELETE FROM chores WHERE family_id = $1', [familyId]);
+      await pool.query('DELETE FROM rewards WHERE family_id = $1', [familyId]);
+      await pool.query('DELETE FROM child_invitations WHERE family_id = $1', [familyId]);
+      await pool.query('DELETE FROM family_daily_habits WHERE family_id = $1', [familyId]);
+      await pool.query('DELETE FROM family_members WHERE family_id = $1', [familyId]);
+
+      // Remove family_id from all users and delete users without email (non-account children)
+      await pool.query('UPDATE users SET family_id = NULL WHERE family_id = $1', [familyId]);
+      await pool.query('DELETE FROM users WHERE family_id IS NULL AND email IS NULL');
+
+      // Delete the family itself
+      await pool.query('DELETE FROM families WHERE family_id = $1', [familyId]);
+
+      return response(200, { message: 'Family and all associated data have been permanently deleted' });
+    }
+
+    // Update family name/house type
+    if (path.match(/^\/v1\/families\/[^/]+$/) && httpMethod === 'PATCH') {
+      const user = getUserFromToken(event);
+      if (!user) return response(401, { error: 'Unauthorized' });
+      const familyId = path.split('/')[3];
+      const { family_name, house_type } = data;
+      const updates: string[] = [];
+      const params: any[] = [];
+      let idx = 1;
+      if (family_name) { updates.push(`family_name = $${idx++}`); params.push(family_name); }
+      if (house_type) { updates.push(`house_type = $${idx++}`); params.push(house_type); }
+      if (updates.length === 0) return response(400, { error: 'Nothing to update' });
+      params.push(familyId);
+      await pool.query(`UPDATE families SET ${updates.join(', ')} WHERE family_id = $${idx}`, params);
+      return response(200, { message: 'Family updated' });
+    }
+
     // Update user details (parent can edit child's name/age)
     if (path.match(/^\/v1\/users\/[^/]+$/) && httpMethod === 'PATCH') {
       const user = getUserFromToken(event);
