@@ -271,7 +271,9 @@ struct RoomScanView: View {
             var allChores: [[String: String]] = []
 
             for image in photoImages {
-                guard let data = image.jpegData(compressionQuality: 0.6) else { continue }
+                // Resize to max 1024px to stay under Lambda's 6MB payload limit
+                let resized = resizeImage(image, maxDimension: 1024)
+                guard let data = resized.jpegData(compressionQuality: 0.4) else { continue }
                 let base64 = data.base64EncodedString()
                 do {
                     let rooms = try await APIClient.shared.analyzeRoom(imageBase64: base64)
@@ -334,5 +336,15 @@ struct RoomScanView: View {
                 dismiss()
             }
         }
+    }
+
+    // Resize image to fit within maxDimension while maintaining aspect ratio
+    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        guard size.width > maxDimension || size.height > maxDimension else { return image }
+        let ratio = min(maxDimension / size.width, maxDimension / size.height)
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
     }
 }

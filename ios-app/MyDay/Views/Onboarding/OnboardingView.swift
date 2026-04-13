@@ -17,9 +17,54 @@ struct SetupFamilyFlow: View {
     @State private var aiChatComplete = false
     @State private var extractedBinSchedule: ExtractedBinSchedule?
     @State private var extractedPets: [ExtractedPet]?
+    @State private var didRestoreProgress = false
 
     enum SetupStep: Int { case start = 0, family = 1, children = 2, rewards = 3, complete = 4 }
     enum SetupMode { case choosing, aiChat, manual }
+
+    // MARK: - Persistence Helpers
+    private static let progressKey = "onboarding_progress"
+
+    private func saveProgress() {
+        var data: [String: Any] = [:]
+        if !familyName.isEmpty { data["familyName"] = familyName }
+        if houseType != "house" { data["houseType"] = houseType }
+        let validChildren = children.filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
+        if !validChildren.isEmpty {
+            data["children"] = validChildren.map { ["name": $0.name, "age": $0.age] }
+        }
+        if !selectedRewardIds.isEmpty { data["rewards"] = Array(selectedRewardIds) }
+        data["step"] = step.rawValue
+        data["mode"] = mode == .aiChat ? "aiChat" : mode == .manual ? "manual" : "choosing"
+        data["aiChatComplete"] = aiChatComplete
+        UserDefaults.standard.set(data, forKey: Self.progressKey)
+    }
+
+    private func restoreProgress() {
+        guard let data = UserDefaults.standard.dictionary(forKey: Self.progressKey) else { return }
+        if let fn = data["familyName"] as? String { familyName = fn }
+        if let ht = data["houseType"] as? String { houseType = ht }
+        if let kids = data["children"] as? [[String: String]] {
+            children = kids.map { ($0["name"] ?? "", $0["age"] ?? "") }
+            if children.isEmpty { children = [("", "")] }
+        }
+        if let rids = data["rewards"] as? [String] { selectedRewardIds = Set(rids) }
+        if let m = data["mode"] as? String {
+            mode = m == "aiChat" ? .aiChat : m == "manual" ? .manual : .choosing
+        }
+        if let aic = data["aiChatComplete"] as? Bool { aiChatComplete = aic }
+        // Restore step — but go to rewards if AI chat was complete, or to the saved step for manual
+        if let s = data["step"] as? Int, let restoredStep = SetupStep(rawValue: s) {
+            if restoredStep == .complete { step = .start } // Don't restore to complete
+            else if aiChatComplete { step = .start; mode = .aiChat } // AI chat done → show rewards
+            else if mode == .manual && restoredStep.rawValue > 0 { step = restoredStep }
+        }
+        didRestoreProgress = true
+    }
+
+    static func clearProgress() {
+        UserDefaults.standard.removeObject(forKey: progressKey)
+    }
 
     private var progress: Double {
         guard step.rawValue > 0 else { return 0 }
@@ -110,6 +155,13 @@ struct SetupFamilyFlow: View {
         .navigationDestination(isPresented: $showJoinFamily) {
             ClaimInviteView()
         }
+        .onAppear {
+            if !didRestoreProgress { restoreProgress() }
+        }
+        .onChange(of: familyName) { _, _ in saveProgress() }
+        .onChange(of: children.count) { _, _ in saveProgress() }
+        .onChange(of: step) { _, _ in saveProgress() }
+        .onChange(of: aiChatComplete) { _, _ in saveProgress() }
     }
 
     // MARK: - Start Step (choose mode or join existing family)
@@ -335,6 +387,7 @@ struct SetupFamilyFlow: View {
 
                 try? await APIClient.shared.distributeChores(familyId)
                 await auth.restoreSession()
+                SetupFamilyFlow.clearProgress()
                 withAnimation { step = .complete }
             } catch let err as APIError { error = err.errorDescription }
             catch { self.error = error.localizedDescription }
