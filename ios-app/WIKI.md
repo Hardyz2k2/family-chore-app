@@ -383,7 +383,7 @@ All endpoints use Bearer JWT authentication. Base URL: `https://4aeyo9z2hf.execu
 
 - **Dark game background** (#0B0F1A) with neon accents
 - **Colors**: neonBlue, neonGreen, neonPurple, neonOrange, neonYellow, neonRed, neonPink
-- **Difficulty**: Rookie (green), Pro (yellow), Legend (red)
+- **Difficulty**: Quick ⚡ (green), Standard 🔧 (yellow), Challenge 💪 (red)
 - **Components**: GameTextField, NeonButtonStyle, SecondaryButtonStyle, gameCard modifier, neonGlow modifier
 - **Animations**: Star burst on completion, pulsing logo, spring tab transitions
 
@@ -391,24 +391,36 @@ All endpoints use Bearer JWT authentication. Base URL: `https://4aeyo9z2hf.execu
 
 ## Roadmap
 
-### Ideas Backlog
+### Implementation Pipeline
+- **Sign in with Apple** — Backend `POST /auth/apple` needed. iOS framework ready. HIGH priority.
+- **Sign in with Google** — Backend `POST /auth/google` + GoogleSignIn SDK. HIGH priority.
 - **Kid avatars / character customization** — Minecraft-style characters kids can customize with earned points (outfits, accessories, skins). Displayed on leaderboard, quest cards, profile.
 - **Avatar builder during registration** — visual character creator instead of emoji picker
-- **Google Sign In** — pending GoogleSignIn SDK integration
-- **Apple Sign In backend** — needs `POST /auth/apple` endpoint
 
 ---
 
 ## Changelog
 
+### 2026-04-13
+- **App renamed to OMyDay** with custom app icon (dark theme, sparkle, gradient)
+- **Removed Apple/Google Sign In buttons** (moved to pipeline — backend not ready)
+- **Keyboard dismisses on tap** outside text fields
+- **Published to TestFlight** for beta testing
+- **All changes pushed to GitHub**
+
 ### 2026-04-12
-- **Smart Auth Flow** — replaced 6 auth files with unified SmartAuthView (3 taps to login, 1 tap Face ID)
-- **Sign in with Apple** button (pending backend endpoint)
-- **"I'm a kid exploring"** — standalone child registration without family code
-- **Biometric login** — Face ID/Touch ID with WelcomeBackView
-- **Integrated onboarding** — family setup flows inline after registration, not separate screen
-- **Parent 2 support** — "Join existing family" skips onboarding entirely
-- **Family code join** — register + join in one flow (4 taps)
+- **Contracts board** — renamed from Bounties, kid pitching, business portfolio, subcontracting
+- **Chore system v2** — morning/evening routines, daily habits, household chores, pet rotation
+- **Unified invite codes** — 6-char codes for children + partners, removed family code
+- **Manage Family Members** — add, invite, link, edit, remove, change role
+- **Child-to-parent linking** — exploring kid generates code for parent
+- **Difficulty renamed** — Quick ⚡ / Standard 🔧 / Challenge 💪
+- **Extra chores filtered** — no more habits/routine tasks in bonus list
+- **Pet chores from config** — walk, feed, litter auto-created with rotation
+- **Duplicate fix** — redistribute no longer creates duplicate assignments
+- **Animations** — launch particles, section slide-up, habit bounce, status dot pulse
+- **Smart Auth Flow** — unified screen, biometric, invite codes, kid exploring
+- **Integrated onboarding** — AI chat + manual, inline after registration
 
 ### 2026-04-09
 - iOS app created with 50 Swift files

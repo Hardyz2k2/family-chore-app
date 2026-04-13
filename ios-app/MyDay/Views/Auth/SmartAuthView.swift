@@ -1,5 +1,4 @@
 import SwiftUI
-import AuthenticationServices
 
 struct SmartAuthView: View {
     @Environment(AuthManager.self) private var auth
@@ -48,44 +47,6 @@ struct SmartAuthView: View {
                                 LinearGradient(colors: [.neonBlue, .neonPurple], startPoint: .leading, endPoint: .trailing)
                             )
                     }
-
-                    // Social Auth
-                    VStack(spacing: 10) {
-                        SignInWithAppleButton(.signIn) { request in
-                            request.requestedScopes = [.fullName, .email]
-                        } onCompletion: { result in
-                            handleAppleSignIn(result)
-                        }
-                        .signInWithAppleButtonStyle(.white)
-                        .frame(height: 50)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                        // Google Sign In (placeholder — needs GoogleSignIn SDK)
-                        Button {
-                            // TODO: Integrate GoogleSignIn SDK
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "g.circle.fill")
-                                    .font(.system(size: 20))
-                                Text("Sign in with Google")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                    }
-                    .padding(.horizontal, 28)
-
-                    // Divider
-                    HStack {
-                        Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
-                        Text("or").font(.system(size: 13, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.3))
-                        Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
-                    }
-                    .padding(.horizontal, 28)
 
                     // Email/Password form
                     VStack(spacing: 12) {
@@ -195,7 +156,8 @@ struct SmartAuthView: View {
                 }
             }
         }
-        .onAppear { pulse = true; withAnimation { } }
+        .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+        .onAppear { pulse = true }
         .navigationDestination(isPresented: $showInviteCode) {
             ClaimInviteView()
         }
@@ -223,23 +185,6 @@ struct SmartAuthView: View {
         }
     }
 
-    // MARK: - Apple Sign In
-    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
-        switch result {
-        case .success(let auth):
-            if let credential = auth.credential as? ASAuthorizationAppleIDCredential,
-               let tokenData = credential.identityToken,
-               let _ = String(data: tokenData, encoding: .utf8) {
-                // TODO: Send identity token to backend POST /auth/apple
-                // For now, show message
-                self.auth.error = "Apple Sign In needs backend support. Use email for now."
-            }
-        case .failure(let error):
-            if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
-                auth.error = "Apple Sign In failed"
-            }
-        }
-    }
 }
 
 // MARK: - Kid Explore Auth (standalone child registration)

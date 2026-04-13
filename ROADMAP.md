@@ -163,6 +163,18 @@ Families can see their progress amongst other families on a global leaderboard. 
 - 10% commission on third-party reward fulfillment
 - Brand partnerships (toy companies, experience providers)
 
+### Sign in with Apple
+**Priority: HIGH**
+- Backend: `POST /auth/apple` endpoint — accepts Apple identity token, creates/finds user, returns JWT
+- iOS: `AuthenticationServices` framework already imported, just needs backend
+- Eliminates email/password friction for parents
+
+### Sign in with Google
+**Priority: HIGH**
+- Backend: `POST /auth/google` endpoint — accepts Google identity token, creates/finds user, returns JWT
+- iOS: Requires `GoogleSignIn` SDK pod/SPM integration
+- Covers Android-switching families
+
 ### Kid Avatar / Character Customization
 - Minecraft-style characters kids can unlock and customize with earned points
 - Visual character creator during registration (hair, skin, clothes, accessories)
