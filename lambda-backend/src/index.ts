@@ -1385,13 +1385,27 @@ export const handler = async (event: any): Promise<APIGatewayProxyResult> => {
       const currentResult = await pool.query('SELECT house_details FROM families WHERE family_id = $1', [familyId]);
       const details = currentResult.rows[0]?.house_details || {};
       const existingRooms: any[] = details.scanned_rooms || [];
-      const existingNames = new Set(existingRooms.map((r: any) => r.name.toLowerCase()));
 
-      const newRoomDetails = rooms
-        .map((r: any) => ({ name: r.name, confidence: r.confidence, assets: r.assets || [] }))
-        .filter((r: any) => !existingNames.has(r.name.toLowerCase()));
+      // Merge: if same room name exists, combine assets (dedup). Otherwise add new.
+      const mergedRooms = [...existingRooms];
+      for (const newRoom of rooms) {
+        const roomName = (newRoom.name || '').toLowerCase();
+        const existingIdx = mergedRooms.findIndex((r: any) => r.name.toLowerCase() === roomName);
+        if (existingIdx >= 0) {
+          // Merge assets (combine + deduplicate)
+          const existingAssets = new Set((mergedRooms[existingIdx].assets || []).map((a: string) => a.toLowerCase()));
+          const newAssets = (newRoom.assets || []).filter((a: string) => !existingAssets.has(a.toLowerCase()));
+          mergedRooms[existingIdx].assets = [...(mergedRooms[existingIdx].assets || []), ...newAssets];
+          // Keep higher confidence
+          if ((newRoom.confidence || 0) > (mergedRooms[existingIdx].confidence || 0)) {
+            mergedRooms[existingIdx].confidence = newRoom.confidence;
+          }
+        } else {
+          mergedRooms.push({ name: newRoom.name, confidence: newRoom.confidence, assets: newRoom.assets || [] });
+        }
+      }
 
-      details.scanned_rooms = [...existingRooms, ...newRoomDetails];
+      details.scanned_rooms = mergedRooms;
       await pool.query('UPDATE families SET house_details = $1 WHERE family_id = $2', [JSON.stringify(details), familyId]);
 
       const choresCreated: string[] = [];

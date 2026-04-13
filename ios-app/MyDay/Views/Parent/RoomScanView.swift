@@ -44,22 +44,27 @@ struct RoomScanView: View {
                     // Photo picker
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         HStack(spacing: 10) {
-                            Image(systemName: "photo.on.rectangle.angled")
-                            Text(imageData != nil ? "Change Photo" : "Choose Room Photo")
+                            Image(systemName: isAnalyzing ? "hourglass" : "photo.on.rectangle.angled")
+                            Text(isAnalyzing ? "Analyzing..." : imageData != nil ? "Scan Another Room" : "Choose Room Photo")
                         }
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.neonBlue)
+                        .background(isAnalyzing ? Color.gameCardLight : Color.neonBlue)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+                    .disabled(isAnalyzing)
                     .onChange(of: selectedPhoto) { _, item in
                         Task {
                             if let data = try? await item?.loadTransferable(type: Data.self) {
                                 imageData = data
+                                error = nil
+                                detectedRooms = []
                                 await analyzeImage(data)
                             }
+                            // Reset selection so same photo can be re-picked
+                            selectedPhoto = nil
                         }
                     }
 
@@ -80,7 +85,11 @@ struct RoomScanView: View {
                     }
 
                     if let error {
-                        Text(error).font(.system(size: 13, weight: .medium)).foregroundStyle(.neonRed)
+                        VStack(spacing: 8) {
+                            Text(error).font(.system(size: 13, weight: .medium)).foregroundStyle(.neonRed)
+                            Text("Tap \"Scan Another Room\" above to try a different photo")
+                                .font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.3))
+                        }
                     }
 
                     // Detected rooms
@@ -163,12 +172,19 @@ struct RoomScanView: View {
                         }.gameCard()
                     }
 
-                    Text("You can scan multiple rooms — each scan adds new rooms without overwriting existing ones")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.25))
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 4) {
+                        Text("Each photo adds to your rooms — duplicates are automatically skipped")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.25))
+                            .multilineTextAlignment(.center)
+                        Text("Photos of the same room from different angles are merged by room name")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.15))
+                            .multilineTextAlignment(.center)
+                    }
 
-                    Button("Done") { dismiss() }.font(.system(size: 14, weight: .medium)).foregroundStyle(.white.opacity(0.3))
+                    Button("Done") { dismiss() }
+                        .buttonStyle(SecondaryButtonStyle())
                 }.padding(16)
             }
         }
