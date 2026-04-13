@@ -19,18 +19,10 @@ struct ShopView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // Galaxy header
+                    // Shop header
                     ZStack {
                         LinearGradient(colors: [.purple.opacity(0.3), .indigo.opacity(0.2), .clear], startPoint: .top, endPoint: .bottom)
                             .frame(height: 160)
-                        // Twinkling stars
-                        GeometryReader { geo in
-                            ForEach(0..<15, id: \.self) { i in
-                                Circle().fill(.white.opacity(Double.random(in: 0.2...0.6)))
-                                    .frame(width: CGFloat.random(in: 1...3))
-                                    .position(x: CGFloat.random(in: 0...geo.size.width), y: CGFloat.random(in: 0...160))
-                            }
-                        }.frame(height: 160)
 
                         VStack(spacing: 8) {
                             Image(systemName: "sparkles")
