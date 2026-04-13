@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0B0F1A"/>
+      <stop offset="50%" style="stop-color:#151A2E"/>
+      <stop offset="100%" style="stop-color:#0B0F1A"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4FF"/>
+      <stop offset="100%" style="stop-color:#A855F7"/>
+    </linearGradient>
+    <linearGradient id="text" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00D4FF"/>
+      <stop offset="100%" style="stop-color:#A855F7"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="textglow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  
+  <!-- Subtle star particles -->
+  <circle cx="200" cy="180" r="3" fill="white" opacity="0.3"/>
+  <circle cx="820" cy="220" r="2" fill="white" opacity="0.4"/>
+  <circle cx="150" cy="750" r="2.5" fill="white" opacity="0.25"/>
+  <circle cx="870" cy="680" r="3" fill="white" opacity="0.35"/>
+  <circle cx="400" cy="120" r="2" fill="white" opacity="0.2"/>
+  <circle cx="650" cy="850" r="2" fill="white" opacity="0.3"/>
+  <circle cx="300" cy="900" r="1.5" fill="white" opacity="0.2"/>
+  <circle cx="750" cy="150" r="2" fill="white" opacity="0.25"/>
+  
+  <!-- Main sparkle icon (4-pointed star) -->
+  <g transform="translate(512, 360)" filter="url(#glow)">
+    <!-- Large 4-pointed star -->
+    <path d="M0,-120 C15,-30 30,-15 120,0 C30,15 15,30 0,120 C-15,30 -30,15 -120,0 C-30,-15 -15,-30 0,-120Z" fill="url(#spark)"/>
+    <!-- Small accent stars -->
+    <path d="M70,-85 C73,-78 78,-73 85,-70 C78,-67 73,-62 70,-55 C67,-62 62,-67 55,-70 C62,-73 67,-78 70,-85Z" fill="#00D4FF" opacity="0.8"/>
+    <path d="M-50,-70 C-48,-65 -45,-62 -40,-60 C-45,-58 -48,-55 -50,-50 C-52,-55 -55,-58 -60,-60 C-55,-62 -52,-65 -50,-70Z" fill="#A855F7" opacity="0.7"/>
+  </g>
+  
+  <!-- App name -->
+  <text x="512" y="620" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="160" fill="url(#text)" filter="url(#textglow)">OMyDay</text>
+  
+  <!-- Tagline -->
+  <text x="512" y="700" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="52" fill="white" opacity="0.4">Family Chores</text>
+</svg>

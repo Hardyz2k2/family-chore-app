@@ -1,0 +1,763 @@
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>MyDay iOS Wiki</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;max-width:900px;margin:0 auto;padding:20px;background:#0B0F1A;color:#e0e0e0}
+h1,h2,h3{color:#00D4FF} h1{border-bottom:2px solid #00D4FF;padding-bottom:10px}
+h2{border-bottom:1px solid #1E2440;padding-bottom:8px;margin-top:40px}
+a{color:#00FF88} code{background:#1E2440;padding:2px 6px;border-radius:4px;color:#FF69B4;font-size:0.9em}
+pre{background:#151A2E;padding:16px;border-radius:8px;overflow-x:auto;border:1px solid #1E2440}
+pre code{background:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th{background:#151A2E;padding:10px;text-align:left;color:#A855F7;border:1px solid #1E2440}
+td{padding:8px 10px;border:1px solid #1E2440}
+tr:nth-child(even){background:#0f1225}
+blockquote{border-left:3px solid #00D4FF;padding-left:16px;color:#999;margin:16px 0}
+hr{border:none;border-top:1px solid #1E2440;margin:30px 0}
+</style></head><body><h1 id="myday-ios-app-wiki">MyDay iOS App — Wiki</h1>
+<blockquote>
+<p><strong>Last updated:</strong> 2026-04-12
+<strong>Version:</strong> 1.0.0
+<strong>Platform:</strong> iOS 26.2+ (SwiftUI)
+<strong>Bundle ID:</strong> MyFamily.MyDay
+<strong>API:</strong> https://4aeyo9z2hf.execute-api.eu-west-1.amazonaws.com/v1</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#auth-flow">Auth Flow</a></li>
+<li><a href="#app-routing">App Routing</a></li>
+<li><a href="#child-experience">Child Experience</a></li>
+<li><a href="#parent-experience">Parent Experience</a></li>
+<li><a href="#shared-views">Shared Views</a></li>
+<li><a href="#onboarding">Onboarding</a></li>
+<li><a href="#api-endpoints">API Endpoints</a></li>
+<li><a href="#models">Models</a></li>
+<li><a href="#theme--design">Theme &amp; Design</a></li>
+<li><a href="#roadmap">Roadmap</a></li>
+<li><a href="#changelog">Changelog</a></li>
+</ul>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>MyDay is a gamified family chore management iOS app. Children complete "quests" (chores) to earn XP and points, which they spend in a rewards shop. Parents manage chores, approve completions, post bounties (jobs), and configure household routines. The app uses a dark game theme with neon accents.</p>
+<p><strong>47 Swift files</strong> — SwiftUI, Observation framework, no third-party dependencies.</p>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<pre><code>ios-app/
+├── MyDay.xcodeproj
+└── MyDay/
+    ├── MyDayApp.swift              # Entry point + routing
+    ├── ContentView.swift           # Xcode compatibility
+    ├── Models/                     # Data models (8 files)
+    │   ├── User.swift
+    │   ├── Chore.swift
+    │   ├── Family.swift
+    │   ├── Job.swift
+    │   ├── Reward.swift
+    │   ├── GameModels.swift
+    │   ├── ScreenTime.swift
+    │   └── CuratedRewards.swift
+    ├── Services/                   # API + Keychain (2 files)
+    │   ├── APIClient.swift
+    │   └── KeychainHelper.swift
+    ├── Stores/                     # State management (4 files)
+    │   ├── AuthManager.swift
+    │   ├── ChoreStore.swift
+    │   ├── FamilyStore.swift
+    │   └── ShopStore.swift
+    ├── Theme/                      # Colors + styles (2 files)
+    │   ├── GameColors.swift
+    │   └── GameTheme.swift
+    └── Views/
+        ├── Auth/                   # Smart auth (3 files)
+        │   ├── SmartAuthView.swift
+        │   ├── FamilyCodeAuthView.swift
+        │   └── WelcomeBackView.swift
+        ├── Onboarding/             # Family setup (2 files)
+        │   ├── OnboardingView.swift (SetupFamilyFlow)
+        │   └── AIChatOnboardingView.swift
+        ├── Child/                  # Child-only views (4 files)
+        │   ├── QuestMapView.swift
+        │   ├── QuestDetailView.swift
+        │   ├── ExtraQuestsView.swift
+        │   └── ProfileView.swift
+        ├── Parent/                 # Parent-only views (5 files)
+        │   ├── CommandCenterView.swift
+        │   ├── ApprovalsView.swift
+        │   ├── ParentSettingsView.swift
+        │   ├── ParentShopView.swift
+        │   └── RoomScanView.swift
+        ├── Shared/                 # Both roles (6 files)
+        │   ├── BountyBoardView.swift
+        │   ├── ShopView.swift
+        │   ├── LeaderboardView.swift
+        │   ├── FamilyRulesView.swift
+        │   ├── ScreenTimeView.swift
+        │   └── AllChoresView.swift
+        ├── Components/             # Reusable UI (8 files)
+        │   ├── GameTabBar.swift
+        │   ├── QuestCard.swift
+        │   ├── XPBar.swift
+        │   ├── StreakMeter.swift
+        │   ├── StreakBadges.swift
+        │   ├── WeeklyBadges.swift
+        │   ├── BadgeGrid.swift
+        │   └── ParticleEffect.swift
+        └── MainTabView.swift
+</code></pre>
+<hr />
+<h2 id="auth-flow">Auth Flow</h2>
+<h3 id="smart-auth-one-screen-multiple-paths">Smart Auth — One Screen, Multiple Paths</h3>
+<p>The app uses a single <code>SmartAuthView</code> that replaces traditional role selection + separate login/register screens.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Taps</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sign in with Apple</strong></td>
+<td>1-2</td>
+<td>Anyone</td>
+</tr>
+<tr>
+<td><strong>Sign in with Google</strong></td>
+<td>1-2</td>
+<td>Anyone (pending SDK)</td>
+</tr>
+<tr>
+<td><strong>Email login</strong></td>
+<td>3</td>
+<td>Returning users</td>
+</tr>
+<tr>
+<td><strong>Email register</strong></td>
+<td>5</td>
+<td>New users (tap "New here?")</td>
+</tr>
+<tr>
+<td><strong>Family code join</strong></td>
+<td>4</td>
+<td>Children / Parent 2</td>
+</tr>
+<tr>
+<td><strong>Kid exploring</strong></td>
+<td>4</td>
+<td>Child without code</td>
+</tr>
+<tr>
+<td><strong>Biometric (Face ID)</strong></td>
+<td>1</td>
+<td>Returning users</td>
+</tr>
+</tbody>
+</table>
+<h3 id="how-it-works">How It Works</h3>
+<ol>
+<li><strong>No role selection</strong> — the API profile response contains the role</li>
+<li><strong>Login + Register on same screen</strong> — "New here?" expands the name field inline</li>
+<li><strong>"I have a family code"</strong> — prominent link for children joining</li>
+<li><strong>"I'm a kid exploring"</strong> — kids register standalone, join family later</li>
+<li><strong>Biometric</strong> — saved credentials in Keychain with Face ID protection</li>
+</ol>
+<h3 id="routing-logic-mydayappswift">Routing Logic (MyDayApp.swift)</h3>
+<pre><code>Loading → LaunchView
+Not auth + has biometric creds → WelcomeBackView (Face ID)
+Not auth → SmartAuthView
+Auth + parent + no family → SetupFamilyFlow (inline onboarding)
+Auth + child + no family → MainTabView (with join prompt)
+Auth + has family → MainTabView
+</code></pre>
+<hr />
+<h2 id="app-routing">App Routing</h2>
+<h3 id="child-tabs">Child Tabs</h3>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>View</th>
+<th>Features</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quests</td>
+<td>QuestMapView</td>
+<td>Today's chores, XP bar, streak, quick actions, tips</td>
+</tr>
+<tr>
+<td>Shop</td>
+<td>ShopView</td>
+<td>Browse &amp; buy rewards with points</td>
+</tr>
+<tr>
+<td>Bounties</td>
+<td>BountyBoardView</td>
+<td>Accept/apply for jobs</td>
+</tr>
+<tr>
+<td>Rules</td>
+<td>FamilyRulesView</td>
+<td>View household rules, today's duties</td>
+</tr>
+<tr>
+<td>Profile</td>
+<td>ProfileView</td>
+<td>Stats, badges, streak badges, logout</td>
+</tr>
+</tbody>
+</table>
+<h3 id="parent-tabs">Parent Tabs</h3>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>View</th>
+<th>Features</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HQ</td>
+<td>CommandCenterView</td>
+<td>Family overview, stats, invite card, badges, redistribute</td>
+</tr>
+<tr>
+<td>Approve</td>
+<td>ApprovalsView</td>
+<td>Approve/reject completed chores</td>
+</tr>
+<tr>
+<td>Bounties</td>
+<td>BountyBoardView</td>
+<td>Create/confirm jobs, review applications</td>
+</tr>
+<tr>
+<td>Shop</td>
+<td>ParentShopView</td>
+<td>Add/edit/delete rewards, per-child targeting</td>
+</tr>
+<tr>
+<td>Settings</td>
+<td>ParentSettingsView</td>
+<td>Family config, chores, routines, room scan, participation</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="child-experience">Child Experience</h2>
+<h3 id="questmapview-daily-hub">QuestMapView (Daily Hub)</h3>
+<ul>
+<li>Welcome greeting + points balance</li>
+<li>XP bar with level + title (Apprentice → Mythic)</li>
+<li>Streak counter (if active)</li>
+<li>Quick actions: Bonus Quests, Rankings, Screen Time</li>
+<li>Today's missions with active/completed split</li>
+<li>"See All" link → AllChoresView (multi-day, filtered)</li>
+<li>Tips section (when daily chores are done)</li>
+<li>Star burst animation on quest completion</li>
+</ul>
+<h3 id="questdetailview">QuestDetailView</h3>
+<ul>
+<li>Accept Mission → Start chore</li>
+<li>Mission Complete → Submit for approval</li>
+<li>Transfer → Give chore to sibling (100% XP to them)</li>
+<li>Ask Help → Split with sibling (50/50 XP)</li>
+<li>Status display: Awaiting Approval, Approved</li>
+</ul>
+<h3 id="profileview">ProfileView</h3>
+<ul>
+<li>Avatar (first letter), level, title</li>
+<li>Stats: All Time, This Week, Points</li>
+<li>Streak meter (7-day visual with flames)</li>
+<li>Weekly badges (6 tiers: Getting Started → Chore Champion)</li>
+<li>Streak badges (5 tiers: Warm Up → Legendary)</li>
+<li>Status badges (Weekly Superstar, Monthly Hero)</li>
+<li>Logout</li>
+</ul>
+<h3 id="shopview">ShopView</h3>
+<ul>
+<li>Point balance display</li>
+<li>2-column reward grid</li>
+<li>Buy button (enabled if affordable)</li>
+<li>Purchase animation (green checkmark, 2s)</li>
+</ul>
+<hr />
+<h2 id="parent-experience">Parent Experience</h2>
+<h3 id="commandcenterview-hq">CommandCenterView (HQ)</h3>
+<ul>
+<li>Quick stats: Today's Quests, Pending Approvals, Family Members</li>
+<li>Quick actions: Rankings, Rules, Screen Time, View All Chores</li>
+<li>Invite card (if children without accounts exist)</li>
+<li>Children overview with progress per child</li>
+<li>Badges display</li>
+<li>Redistribute Quests button (AI-powered)</li>
+</ul>
+<h3 id="approvalsview">ApprovalsView</h3>
+<ul>
+<li>Pending chore cards with child name, points, difficulty, date</li>
+<li>Transfer/support indicators</li>
+<li>Approve (green) + Reject (gray) buttons</li>
+<li>Tips section</li>
+</ul>
+<h3 id="parentshopview">ParentShopView</h3>
+<ul>
+<li>Add reward form (name, description, cost, child targeting)</li>
+<li>Edit/delete existing rewards</li>
+<li>Per-child or all-children assignment</li>
+</ul>
+<h3 id="parentsettingsview">ParentSettingsView</h3>
+<ul>
+<li>Profile card with family code</li>
+<li>Add Child / Invite Child</li>
+<li>Manage Chores + Redistribute</li>
+<li>Manage Rewards</li>
+<li>Household Routines: Bin Collection, Pet Care, Gaming Schedule, Room Scanning</li>
+<li>Parent participation toggle</li>
+<li>Web dashboard link</li>
+<li>Logout</li>
+</ul>
+<h3 id="room-scanning-roomscanview">Room Scanning (RoomScanView)</h3>
+<ul>
+<li>Photo picker for room images</li>
+<li>AI analysis via GPT-4o Vision</li>
+<li>Detected rooms with confidence, assets, suggested chores</li>
+<li>Save rooms + auto-create chores</li>
+</ul>
+<hr />
+<h2 id="shared-views">Shared Views</h2>
+<h3 id="allchoresview">AllChoresView</h3>
+<ul>
+<li>Multi-day chore list grouped by date (Today, Tomorrow, etc.)</li>
+<li>Filter tabs: All / Pending / Completed</li>
+<li>Parent sees child names on chore cards</li>
+<li>Child can tap chores for detail view</li>
+</ul>
+<h3 id="bountyboardview-jobs-board">BountyBoardView (Jobs Board)</h3>
+<ul>
+<li><strong>Child</strong>: Accept open jobs, apply with reason+bid, mark complete</li>
+<li><strong>Parent</strong>: Create bounties (points/cash, open/application), confirm, review applications</li>
+<li>Role-guarded actions and sheets</li>
+</ul>
+<h3 id="familyrulesview">FamilyRulesView</h3>
+<ul>
+<li><strong>Child</strong>: "Today's Duties" summary (your turn highlights), own gaming schedule only</li>
+<li><strong>Parent</strong>: Full view of all rooms, bins, pets, gaming for all children</li>
+</ul>
+<h3 id="screentimeview">ScreenTimeView</h3>
+<ul>
+<li><strong>Child</strong>: Access status (locked/unlocked), requirements, daily limit</li>
+<li><strong>Parent</strong>: Per-child configuration (daily limit, chore gate, min points)</li>
+</ul>
+<h3 id="leaderboardview">LeaderboardView</h3>
+<ul>
+<li>Family rankings by points with medal display</li>
+</ul>
+<hr />
+<h2 id="onboarding">Onboarding</h2>
+<h3 id="setupfamilyflow-for-new-parents">SetupFamilyFlow (for new parents)</h3>
+<p>Integrated into registration — not a separate screen.</p>
+<p><strong>Options:</strong>
+1. <strong>Join existing family</strong> — for parent 2 (enter code, skip all setup)
+2. <strong>Chat with AI</strong> — conversational setup with GPT-4 Turbo + speech recognition + TTS
+3. <strong>Manual setup</strong> — step-by-step form</p>
+<p><strong>Manual Steps:</strong>
+1. Family name + house type
+2. Add children (name + age)
+3. Select rewards (20 curated: daily/weekly/family targets)</p>
+<p><strong>AI Chat Features:</strong>
+- Speech recognition (iOS Speech framework)
+- Text-to-speech (API + fallback to AVSpeechSynthesizer)
+- Typing indicator (bouncing dots)
+- Real-time extracted data card
+- Auto-transition to rewards when complete</p>
+<hr />
+<h2 id="api-endpoints">API Endpoints</h2>
+<p>All endpoints use Bearer JWT authentication. Base URL: <code>https://4aeyo9z2hf.execute-api.eu-west-1.amazonaws.com/v1</code></p>
+<h3 id="auth">Auth</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/auth/login</code></td>
+<td>Email+password login</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/register</code></td>
+<td>Create account</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/auth/profile</code></td>
+<td>Get current user</td>
+</tr>
+</tbody>
+</table>
+<h3 id="family">Family</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/families</code></td>
+<td>Create family</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}</code></td>
+<td>Get family + members</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/families/join</code></td>
+<td>Join via code</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/families/{id}/members</code></td>
+<td>Add child</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/families/{id}/config</code></td>
+<td>Update routines</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/families/{id}/rooms</code></td>
+<td>Save scanned rooms</td>
+</tr>
+</tbody>
+</table>
+<h3 id="chores">Chores</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/chores</code></td>
+<td>Create chore</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/users/{id}/chores</code></td>
+<td>User's chores</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}/chores</code></td>
+<td>Family chores</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/chores/assigned/{id}</code></td>
+<td>Update status</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/chores/assigned/{id}/approve</code></td>
+<td>Approve</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/chores/assigned/{id}/transfer</code></td>
+<td>Transfer</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/chores/assigned/{id}/support</code></td>
+<td>Request help</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/users/{id}/extra-chores</code></td>
+<td>Bonus chores</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/users/{id}/extra-chores</code></td>
+<td>Claim bonus</td>
+</tr>
+</tbody>
+</table>
+<h3 id="gamification">Gamification</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/users/{id}/stats</code></td>
+<td>User statistics</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/users/{id}/points</code></td>
+<td>Point balance</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}/badges</code></td>
+<td>Badge data</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}/leaderboard</code></td>
+<td>Rankings</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}/approvals</code></td>
+<td>Pending approvals</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rewards-jobs">Rewards &amp; Jobs</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}/rewards</code></td>
+<td>Reward catalog</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/rewards</code></td>
+<td>Create reward</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/rewards/bulk</code></td>
+<td>Bulk create</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/rewards/{id}</code></td>
+<td>Update</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/rewards/{id}</code></td>
+<td>Delete</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/rewards/redeem</code></td>
+<td>Redeem</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/families/{id}/jobs</code></td>
+<td>Jobs list</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/jobs</code></td>
+<td>Create job</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/jobs/{id}/apply</code></td>
+<td>Apply/accept</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/jobs/{id}/assign</code></td>
+<td>Pick winner</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/jobs/{id}/complete</code></td>
+<td>Mark done</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/jobs/{id}/confirm</code></td>
+<td>Confirm + award</td>
+</tr>
+</tbody>
+</table>
+<h3 id="screen-time-ai">Screen Time &amp; AI</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/users/{id}/screen-time</code></td>
+<td>Settings</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/users/{id}/screen-time</code></td>
+<td>Update settings</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/users/{id}/screen-time/access</code></td>
+<td>Check access</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/ai/voice-setup</code></td>
+<td>Chat onboarding</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/ai/tts</code></td>
+<td>Text-to-speech</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/ai/families/{id}/distribute-chores</code></td>
+<td>AI distribute</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/ai/analyze-room</code></td>
+<td>Room detection</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="models">Models</h2>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User</td>
+<td>userId, email, firstName, role, familyId, points, emoji</td>
+</tr>
+<tr>
+<td>Family</td>
+<td>familyId, familyName, familyCode, houseDetails, members</td>
+</tr>
+<tr>
+<td>AssignedChore</td>
+<td>assignedChoreId, choreName, status, points, difficulty, transferType</td>
+</tr>
+<tr>
+<td>ExtraChore</td>
+<td>choreId, choreName, difficulty, points</td>
+</tr>
+<tr>
+<td>Reward</td>
+<td>rewardId, rewardName, pointCost, childId, isActive</td>
+</tr>
+<tr>
+<td>Job</td>
+<td>jobId, title, rewardType, rewardAmount, jobType, status</td>
+</tr>
+<tr>
+<td>Badge</td>
+<td>userId, weeklySuperstar, monthlyHero</td>
+</tr>
+<tr>
+<td>LeaderboardEntry</td>
+<td>rank, name, points</td>
+</tr>
+<tr>
+<td>UserStats</td>
+<td>totalCompleted, weekCompleted, streak, totalPoints</td>
+</tr>
+<tr>
+<td>ScreenTimeSettings</td>
+<td>dailyLimitMinutes, requireDailyChores, minimumPoints</td>
+</tr>
+<tr>
+<td>GameLevel</td>
+<td>100 XP/level, titles: Apprentice→Mythic</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="theme-design">Theme &amp; Design</h2>
+<ul>
+<li><strong>Dark game background</strong> (#0B0F1A) with neon accents</li>
+<li><strong>Colors</strong>: neonBlue, neonGreen, neonPurple, neonOrange, neonYellow, neonRed, neonPink</li>
+<li><strong>Difficulty</strong>: Rookie (green), Pro (yellow), Legend (red)</li>
+<li><strong>Components</strong>: GameTextField, NeonButtonStyle, SecondaryButtonStyle, gameCard modifier, neonGlow modifier</li>
+<li><strong>Animations</strong>: Star burst on completion, pulsing logo, spring tab transitions</li>
+</ul>
+<hr />
+<h2 id="roadmap">Roadmap</h2>
+<h3 id="ideas-backlog">Ideas Backlog</h3>
+<ul>
+<li><strong>Kid avatars / character customization</strong> — Minecraft-style characters kids can customize with earned points (outfits, accessories, skins). Displayed on leaderboard, quest cards, profile.</li>
+<li><strong>Avatar builder during registration</strong> — visual character creator instead of emoji picker</li>
+<li><strong>Google Sign In</strong> — pending GoogleSignIn SDK integration</li>
+<li><strong>Apple Sign In backend</strong> — needs <code>POST /auth/apple</code> endpoint</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<h3 id="2026-04-12">2026-04-12</h3>
+<ul>
+<li><strong>Smart Auth Flow</strong> — replaced 6 auth files with unified SmartAuthView (3 taps to login, 1 tap Face ID)</li>
+<li><strong>Sign in with Apple</strong> button (pending backend endpoint)</li>
+<li><strong>"I'm a kid exploring"</strong> — standalone child registration without family code</li>
+<li><strong>Biometric login</strong> — Face ID/Touch ID with WelcomeBackView</li>
+<li><strong>Integrated onboarding</strong> — family setup flows inline after registration, not separate screen</li>
+<li><strong>Parent 2 support</strong> — "Join existing family" skips onboarding entirely</li>
+<li><strong>Family code join</strong> — register + join in one flow (4 taps)</li>
+</ul>
+<h3 id="2026-04-09">2026-04-09</h3>
+<ul>
+<li>iOS app created with 50 Swift files</li>
+<li>Full feature parity with web app</li>
+<li>AI voice/text chat onboarding with Speech framework</li>
+<li>All chore management features (transfer, support, extra chores)</li>
+<li>Gamification (XP, levels, badges, streaks, leaderboard)</li>
+<li>Rewards shop (child buy, parent manage)</li>
+<li>Jobs board (open + application types)</li>
+<li>Family rules (bins, pets, gaming) with role filtering</li>
+<li>Screen time management (child status + parent config)</li>
+<li>Room scanning with GPT-4o Vision</li>
+<li>Multi-day chore view with filter tabs</li>
+<li>Streak badges (Warm Up → Legendary)</li>
+<li>Role-based view separation throughout</li>
+</ul></body></html>

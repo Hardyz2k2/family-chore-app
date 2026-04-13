@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { User, Family, AssignedChore, Reward, LeaderboardEntry } from '../types';
+import api from '../services/api';
 
 interface AppState {
   user: User | null;
@@ -73,13 +74,35 @@ export const useStore = create<AppState>((set) => ({
     });
   },
 
-  initializeAuth: () => {
+  initializeAuth: async () => {
     const token = localStorage.getItem('authToken');
     const userJson = localStorage.getItem('user');
 
     if (token && userJson) {
       const user = JSON.parse(userJson);
-      set({ token, user, isAuthenticated: true, isLoading: false });
+      set({ token, user, isAuthenticated: true });
+
+      // Restore family from API if the user has a familyId
+      if (user.familyId) {
+        try {
+          const familyDetails = await api.getFamilyDetails(user.familyId);
+          set({
+            family: {
+              familyId: familyDetails.family_id,
+              familyName: familyDetails.family_name,
+              houseType: familyDetails.house_type,
+              houseDetails: familyDetails.house_details,
+              members: familyDetails.members,
+            },
+            isLoading: false,
+          });
+        } catch {
+          // API call failed — still let them through, don't get stuck loading
+          set({ isLoading: false });
+        }
+      } else {
+        set({ isLoading: false });
+      }
     } else {
       set({ isLoading: false });
     }

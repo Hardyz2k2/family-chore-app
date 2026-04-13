@@ -10,10 +10,39 @@ export interface User {
   emoji?: string;
 }
 
+export interface BinSchedule {
+  collection_days: string[];
+  rotation_children: string[];
+  rotation_week_start: string;
+}
+
+export interface Pet {
+  id: string;
+  name: string;
+  type: 'dog' | 'cat' | 'other';
+  walk_rotation_children?: string[];
+  litter_rotation_children?: string[];
+  min_walk_age?: number;
+}
+
+export interface GamingRule {
+  days: string[];
+  device: string;
+  hours: number;
+}
+
+export interface HouseDetails {
+  scanned_rooms?: Array<{ name: string; confidence: number; assets: string[] }>;
+  bin_schedule?: BinSchedule;
+  pets?: Pet[];
+  gaming_schedule?: Record<string, { rules: GamingRule[] }>;
+}
+
 export interface Family {
   familyId: string;
   familyName: string;
   houseType?: string;
+  houseDetails?: HouseDetails;
   members: FamilyMember[];
 }
 
@@ -57,7 +86,17 @@ export interface Reward {
   rewardName: string;
   description?: string;
   pointCost: number;
+  rewardType: 'daily' | 'weekly' | 'family_target';
+  childId?: string | null;
+  childName?: string | null;
   isActive: boolean;
+}
+
+export interface Badge {
+  userId: string;
+  firstName: string;
+  weeklySuperstar: boolean;
+  monthlyHero: boolean;
 }
 
 export interface LeaderboardEntry {

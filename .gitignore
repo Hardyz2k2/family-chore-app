@@ -40,6 +40,17 @@ coverage/
 tmp/
 temp/
 
+# Lambda build artifacts
+lambda-backend/function.zip
+lambda-backend/dist/
+
+# iOS / Xcode
+ios-app/.git/
+ios-app/MyDay.xcodeproj/xcuserdata/
+ios-app/MyDay.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcarchive
+DerivedData/
+
 # Package manager locks (keep only one)
 # yarn.lock
 # package-lock.json

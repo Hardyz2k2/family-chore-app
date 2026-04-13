@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, CheckSquare, Gift, CheckCircle, Settings, LogOut } from 'lucide-react';
+import { Home, CheckSquare, Award, ShoppingBag, Briefcase, BookOpen, CheckCircle, Settings, LogOut } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function Layout() {
@@ -15,7 +15,10 @@ export default function Layout() {
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/chores', icon: CheckSquare, label: 'Chores' },
-    { to: '/rewards', icon: Gift, label: 'Rewards' },
+    { to: '/jobs', icon: Briefcase, label: 'Jobs' },
+    { to: '/rewards', icon: Award, label: 'Rewards' },
+    { to: '/shop', icon: ShoppingBag, label: 'Shop' },
+    { to: '/family-rules', icon: BookOpen, label: 'Rules' },
     ...(isParent ? [{ to: '/approvals', icon: CheckCircle, label: 'Approvals' }] : []),
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
@@ -66,29 +69,29 @@ export default function Layout() {
           </nav>
         </aside>
 
-        {/* Page content */}
-        <main className="flex-1 p-6">
+        {/* Page content — extra bottom padding on mobile for fixed nav */}
+        <main className="flex-1 p-6 pb-24 md:pb-6">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <div className="flex justify-around">
+      {/* Mobile bottom nav — scrollable to handle many items in landscape */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex justify-around overflow-x-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex flex-col items-center py-3 px-4 ${
+                `flex flex-col items-center py-2 px-2 min-w-0 shrink-0 ${
                   isActive ? 'text-primary-600' : 'text-gray-500'
                 }`
               }
             >
-              <item.icon size={24} />
-              <span className="text-xs mt-1">{item.label}</span>
+              <item.icon size={22} />
+              <span className="text-[10px] mt-0.5 truncate max-w-[56px] text-center">{item.label}</span>
             </NavLink>
           ))}
         </div>
