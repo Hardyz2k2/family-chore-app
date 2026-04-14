@@ -6,6 +6,7 @@ struct LinkChildView: View {
     @Environment(FamilyStore.self) private var familyStore
     @Environment(\.dismiss) private var dismiss
     @State private var code = ""
+    @FocusState private var codeFocused: Bool
     @State private var isLinking = false
     @State private var result: LinkResult?
     @State private var error: String?
@@ -45,15 +46,24 @@ struct LinkChildView: View {
                                 .background(Color.gameCardLight)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .overlay(RoundedRectangle(cornerRadius: 10)
-                                    .stroke(i < code.count ? Color.neonBlue.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                                    .stroke(i < code.count ? Color.neonBlue.opacity(0.4) :
+                                            codeFocused && i == code.count ? Color.neonBlue.opacity(0.6) :
+                                            Color.white.opacity(0.1), lineWidth: 1))
                         }
                     }
+                    .onTapGesture { codeFocused = true }
 
-                    TextField("", text: $code)
+                    TextField("Enter 6-letter code", text: $code)
+                        .focused($codeFocused)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
                         .keyboardType(.asciiCapable)
-                        .frame(height: 1).opacity(0.01)
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.neonBlue)
+                        .multilineTextAlignment(.center)
+                        .padding(12)
+                        .background(Color.gameCardLight)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                         .onChange(of: code) { _, new in code = String(new.prefix(6)).uppercased() }
 
                     if let result {

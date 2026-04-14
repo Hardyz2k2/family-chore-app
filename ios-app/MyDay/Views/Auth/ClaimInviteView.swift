@@ -7,6 +7,7 @@ struct ClaimInviteView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var name = ""
+    @FocusState private var codeFocused: Bool
     @State private var validation: InviteCodeValidation?
     @State private var isValidating = false
     @State private var isClaiming = false
@@ -32,7 +33,9 @@ struct ClaimInviteView: View {
                     }
 
                     // Code input boxes
+                    // Code input
                     VStack(spacing: 12) {
+                        // Visual boxes (tap to focus the real field)
                         HStack(spacing: 8) {
                             ForEach(0..<6, id: \.self) { i in
                                 let char = i < code.count ? String(code[code.index(code.startIndex, offsetBy: i)]) : ""
@@ -43,22 +46,31 @@ struct ClaimInviteView: View {
                                     .background(Color.gameCardLight)
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                                     .overlay(RoundedRectangle(cornerRadius: 10)
-                                        .stroke(i < code.count ? Color.neonGreen.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                                        .stroke(i < code.count ? Color.neonGreen.opacity(0.4) :
+                                                codeFocused && i == code.count ? Color.neonGreen.opacity(0.6) :
+                                                Color.white.opacity(0.1), lineWidth: 1))
                             }
                         }
+                        .onTapGesture { codeFocused = true }
 
-                        TextField("", text: $code)
+                        // Real text field (visible, styled to blend in)
+                        TextField("Enter 6-letter code", text: $code)
+                            .focused($codeFocused)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.characters)
                             .keyboardType(.asciiCapable)
-                            .frame(height: 1).opacity(0.01)
+                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.neonGreen)
+                            .multilineTextAlignment(.center)
+                            .padding(12)
+                            .background(Color.gameCardLight)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                             .onChange(of: code) { _, new in
                                 code = String(new.prefix(6)).uppercased()
                                 if code.count == 6 && validation == nil { validateCode() }
                             }
-
-                        Text("Tap above and type the code").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.2))
                     }
+                    .onAppear { codeFocused = true }
 
                     if isValidating {
                         ProgressView().tint(.neonGreen)
