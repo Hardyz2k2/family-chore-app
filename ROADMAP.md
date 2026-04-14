@@ -36,8 +36,19 @@
 - [x] Interactive dashboard (clickable stats)
 - [x] Project wiki (WIKI.md + wiki.html)
 
-### iOS App (SwiftUI — MyDay)
-- [x] Project architecture: 35 Swift files
+### iOS App (SwiftUI — OMyDay) — v1.0.1 on TestFlight
+- [x] 52 Swift files, full feature parity with web + new features
+- [x] Smart auth (email, invite codes, biometric, kid exploring)
+- [x] AI onboarding (GPT-4o voice/text, bins, pets, rooms)
+- [x] Chore system v2 (morning/evening routines, daily habits, pet rotation)
+- [x] Contracts board (kid pitching, portfolio, subcontracting)
+- [x] Guided room scanning (name room → multi-photo → AI merge)
+- [x] Unified invite codes (children, partners, link exploring kids)
+- [x] Manage Family Members (add, invite, edit, remove, role change)
+- [x] Manage Home (edit name, house type, delete family)
+- [x] Business Portfolio (reliability, earnings, business levels)
+- [x] Custom app icon + OMyDay branding
+- [x] Published to TestFlight (Build 4)
 - [x] Dark game theme with neon accents
 - [x] Models, APIClient, KeychainHelper, Stores
 - [x] Auth flow (Login/Register → RPG title screen)

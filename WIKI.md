@@ -335,6 +335,22 @@ See [ROADMAP.md](ROADMAP.md) for the full feature backlog. Highlights:
 
 ## Changelog
 
+### 2026-04-14
+- **OMyDay iOS app v1.0.1 (Build 4) on TestFlight**
+- 52 Swift files, full feature parity with web app + new features
+- Smart auth (email, invite codes, biometric, kid exploring)
+- AI onboarding with GPT-4o (voice + text, bins, pets, room scanning)
+- Chore system v2: morning/evening routines, daily habits, household chores, pet rotation
+- Contracts board (renamed from Bounties): kid pitching, portfolio, subcontracting
+- Guided room scanning: name room → upload 1-4 photos → AI merges assets
+- Unified invite codes (6-char): children, partners, link exploring kids
+- Manage Family Members: add, invite, edit, remove, change role
+- Manage Home: edit family name + house type
+- Delete Family: cascading delete with confirmation
+- Business Portfolio: reliability score, earnings, business levels
+- Play Time & Gaming rules with device icons and weekend badges
+- All backend endpoints deployed to AWS Lambda
+
 ### 2026-04-05
 - MyDay iOS app created (35 Swift files — SwiftUI game-style RPG chore app)
 - Feature roadmap & backlog created (ROADMAP.md)

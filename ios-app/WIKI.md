@@ -1,7 +1,7 @@
 # MyDay iOS App — Wiki
 
-> **Last updated:** 2026-04-12
-> **Version:** 1.0.0
+> **Last updated:** 2026-04-14
+> **Version:** 1.0.1 (Build 4)
 > **Platform:** iOS 26.2+ (SwiftUI)
 > **Bundle ID:** MyFamily.MyDay
 > **API:** https://4aeyo9z2hf.execute-api.eu-west-1.amazonaws.com/v1
@@ -30,7 +30,7 @@
 
 MyDay is a gamified family chore management iOS app. Children complete "quests" (chores) to earn XP and points, which they spend in a rewards shop. Parents manage chores, approve completions, post bounties (jobs), and configure household routines. The app uses a dark game theme with neon accents.
 
-**47 Swift files** — SwiftUI, Observation framework, no third-party dependencies.
+**52 Swift files** — SwiftUI, Observation framework, no third-party dependencies.
 
 ---
 
@@ -401,7 +401,33 @@ All endpoints use Bearer JWT authentication. Base URL: `https://4aeyo9z2hf.execu
 
 ## Changelog
 
+### 2026-04-14
+- **TestFlight Build 4** (v1.0.1) published for beta testing
+- **Fixed invite code input** — keyboard now appears, supports paste (was broken hidden TextField)
+- **Fixed code input** in LinkChildView — same fix
+- **Removed all flickering star animations** — clean static backgrounds
+- **Simplified launch animation** — single spring entrance, no particles
+- **Database wiped** for fresh testing
+
 ### 2026-04-13
+- **App renamed to OMyDay** with custom app icon (dark theme, sparkle, gradient)
+- **Published to TestFlight** (Build 1, 2, 3)
+- **Manage Home** — edit family name and house type from Settings
+- **Delete Family** — nuclear option with confirmation, removes all data
+- **Room scanning redesigned** — name room first, upload 1-4 photos, merge assets
+- **Image resize fix** — photos compressed to 1024px before analysis (was failing on 12MP iPhone photos)
+- **Onboarding persistence** — progress saved to UserDefaults across app restarts
+- **Removed Apple/Google Sign In buttons** (backend not ready, moved to pipeline)
+- **Keyboard dismisses** on tap outside text fields
+- **Difficulty renamed** — Quick ⚡ / Standard 🔧 / Challenge 💪
+- **Extra chores filtered** — no habits/routine in bonus list
+- **Pet chores from config** — walk, feed, litter auto-created with rotation
+- **Duplicate chore fix** — redistribute no longer creates duplicates
+- **Unified invite codes** — family code removed, partner invites via code
+- **Manage Family Members** — add, invite, link, edit, remove, change role
+- **Child-to-parent linking** — exploring kid generates code
+- **Contracts board** — renamed from Bounties, kid pitching, portfolio
+- **Chore system v2** — morning/evening routines, daily habits
 - **App renamed to OMyDay** with custom app icon (dark theme, sparkle, gradient)
 - **Removed Apple/Google Sign In buttons** (moved to pipeline — backend not ready)
 - **Keyboard dismisses on tap** outside text fields
